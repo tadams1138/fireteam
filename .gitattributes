@@ -1,0 +1,9 @@
+# Fire Team ships POSIX shell scripts that must keep LF endings on every
+# platform. A CR in a shebang produces "bad interpreter: /usr/bin/env^M", so a
+# Windows checkout with core.autocrlf=true would break every script in the
+# bundle. Pin the whole tree to LF and let the .ps1 wrapper keep CRLF.
+* text=auto eol=lf
+
+*.sh  text eol=lf
+*.md  text eol=lf
+*.ps1 text eol=crlf
