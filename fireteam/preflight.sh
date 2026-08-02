@@ -167,18 +167,34 @@ else
 fi
 
 # --- permissions -------------------------------------------------------------
+# Permissions resolve from two files: this repo's .claude/settings.json and the
+# user's ~/.claude/settings.json. Either one can satisfy a rule, and either one
+# can leak. So every check here reads both -- a check that reads only the repo
+# file reports a correctly-configured machine as misconfigured, and one that
+# reads only the user file misses a repo-scoped leak.
 S=.claude/settings.json
-if [ ! -f "$S" ]; then
-  note "advisory: no $S — the pipeline will prompt for every tool call. Stage 1"
-  note "          proposes rules scoped to this repo; approve them at the gate."
+USER_S="$FIRETEAM_HOME/../settings.json"
+if [ ! -f "$S" ] && [ ! -f "$USER_S" ]; then
+  note "advisory: no settings.json at either level — the pipeline will prompt for"
+  note "          every tool call. Stage 1 proposes rules scoped to this repo;"
+  note "          approve them at the gate."
 else
+  if [ ! -f "$S" ]; then
+    note "advisory: no $S — no repo-scoped rules. Stage 1 proposes them"
+    note "          for this repo; approve them at the gate."
+  fi
   leak=0
-  for pat in 'Write(**/fireteam' 'Edit(**/fireteam' \
-             'Write(.claude/settings' 'Edit(.claude/settings'; do
-    if awk '/"deny"/{d=1} /"allow"/{d=0} !d' "$S" | grep -qF "$pat"; then leak=1; fi
+  for cfg in "$S" "$USER_S"; do
+    [ -f "$cfg" ] || continue
+    for pat in 'Write(**/fireteam' 'Edit(**/fireteam' \
+               'Write(.claude/settings' 'Edit(.claude/settings'; do
+      awk '/"deny"/{d=1} /"allow"/{d=0} !d' "$cfg" | grep -qF "$pat" || continue
+      bad "$cfg allowlists writes to the fireteam install or to settings.json itself"
+      leak=1
+      break
+    done
   done
   if [ "$leak" = 1 ]; then
-    bad "$S allowlists writes to the fireteam install or to settings.json itself"
     note "these must always prompt — an allow rule there turns a narrow execution"
     note "permission into an open shell. Remove it (constitution Article VI)."
   else
@@ -196,7 +212,6 @@ else
   done
 
   # The pipeline's own scripts: granted at user level, repo level, or not at all.
-  USER_S="$FIRETEAM_HOME/../settings.json"
   if grep -qF 'fireteam/handoff.sh' "$S" 2>/dev/null \
      || grep -qF 'fireteam/handoff.sh' "$USER_S" 2>/dev/null; then
     ok "pipeline scripts are allowlisted"
@@ -206,7 +221,12 @@ else
     note "          to $(cd "$FIRETEAM_HOME/.." 2>/dev/null && pwd)/settings.json;"
     note "          install.sh prints the block."
   fi
-  if grep -qF 'Bash(cd:' "$S"; then
+  denies_cd=0
+  for cfg in "$S" "$USER_S"; do
+    [ -f "$cfg" ] || continue
+    if grep -qF 'Bash(cd:' "$cfg"; then denies_cd=1; fi
+  done
+  if [ "$denies_cd" = 1 ]; then
     ok "cd is denied"
   else
     note "advisory: no \"Bash(cd:*)\" denial — without it a stray directory change"
