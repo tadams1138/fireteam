@@ -169,7 +169,6 @@ cat <<'JSON'
     "deny": [
       "Bash(cd:*)",
       "Bash(pushd:*)",
-      "Write(~/.claude/fireteam/**)",
       "Edit(~/.claude/fireteam/**)"
     ]
   }

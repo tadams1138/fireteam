@@ -66,7 +66,6 @@ Merge it into `~/.claude/settings.json` by hand:
     "deny": [
       "Bash(cd:*)",
       "Bash(pushd:*)",
-      "Write(~/.claude/fireteam/**)",
       "Edit(~/.claude/fireteam/**)"
     ]
   }
