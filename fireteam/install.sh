@@ -37,6 +37,23 @@ else
   exit 1
 fi
 
+# Fail here rather than letting every copy fail one by one. A bad target -- a
+# path that cannot be created, or one that exists but is not writable -- is a
+# problem with the argument, and saying so once is clearer than eleven
+# copy-failures pointing at the source tree.
+if ! mkdir -p "$DEST" 2>/dev/null || [ ! -w "$DEST" ]; then
+  echo "cannot install to: $DEST" >&2
+  if [ "$#" -ge 1 ]; then
+    echo >&2
+    echo "That is the target you passed as an argument. Check it is a real path you" >&2
+    echo "can write to — the target shown in the README is a placeholder to replace," >&2
+    echo "not a literal path. To install to the default ~/.claude, pass no argument:" >&2
+    echo >&2
+    echo "  bash install.sh" >&2
+  fi
+  exit 1
+fi
+
 SCRIPTS="constitution.md preflight.sh handoff.sh reviews.sh runlog.sh install.sh"
 AGENTS="fireteam-spec-author.md fireteam-tdd-implementer.md fireteam-solid-reviewer.md fireteam-retro.md"
 COMMANDS="fireteam.md"
@@ -49,6 +66,7 @@ OBSOLETE_AGENTS="pipeline-retro.md spec-author.md tdd-implementer.md solid-revie
 OBSOLETE_COMMANDS="assembly-line.md"
 
 missing=""
+unwritable=""
 copied=0
 
 # Locate a file by name across every plausible layout.
@@ -68,7 +86,7 @@ install_group() { # $1 = subdir under DEST, $2 = source-tree subdir, $3... = fil
         echo "  + $label/$f"
         copied=$((copied+1))
       else
-        missing="$missing $label/$f(copy-failed)"
+        unwritable="$unwritable $label/$f"
       fi
     else
       missing="$missing $label/$f"
@@ -110,12 +128,25 @@ prune agents   $OBSOLETE_AGENTS
 prune commands $OBSOLETE_COMMANDS
 
 echo
-if [ -n "$missing" ]; then
-  echo "INSTALL INCOMPLETE — copied $copied file(s), but could not find:"
-  for m in $missing; do echo "  ! $m"; done
-  echo
-  echo "Put every Fire Team file in one directory alongside install.sh (or keep the"
-  echo "shipped fireteam/ + agents/ + commands/ layout) and run this again."
+# A file that could not be found is a source-tree problem; one that could not be
+# written is a target problem. They need different advice, so report them apart.
+if [ -n "$missing" ] || [ -n "$unwritable" ]; then
+  echo "INSTALL INCOMPLETE — copied $copied file(s)."
+  if [ -n "$missing" ]; then
+    echo
+    echo "Could not find in the source tree at $SRC:"
+    for m in $missing; do echo "  ! $m"; done
+    echo
+    echo "Put every Fire Team file in one directory alongside install.sh (or keep the"
+    echo "shipped fireteam/ + agents/ + commands/ layout) and run this again."
+  fi
+  if [ -n "$unwritable" ]; then
+    echo
+    echo "Could not write into $DEST:"
+    for m in $unwritable; do echo "  ! $m"; done
+    echo
+    echo "Check that you own that directory and its contents are not read-only."
+  fi
   exit 1
 fi
 

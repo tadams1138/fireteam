@@ -27,10 +27,11 @@ always fetches the current `main`, overwrites what it installed before, and prun
 that older versions shipped and this one no longer does. It leaves no clone behind to go
 stale, so there is no state to get out of sync and nothing to clean up between runs.
 
-To install somewhere other than `~/.claude`, pass a target as the last argument:
+To install somewhere other than `~/.claude`, pass a target as the last argument —
+substituting your own path for `~/somewhere/.claude`, which is a placeholder:
 
 ```bash
-tmp=$(mktemp -d) && git clone -q --depth 1 https://github.com/tadams1138/fireteam.git "$tmp" && bash "$tmp/fireteam/install.sh" /path/to/dir; rm -rf "$tmp"
+tmp=$(mktemp -d) && git clone -q --depth 1 https://github.com/tadams1138/fireteam.git "$tmp" && bash "$tmp/fireteam/install.sh" ~/somewhere/.claude; rm -rf "$tmp"
 ```
 
 ### From a clone
