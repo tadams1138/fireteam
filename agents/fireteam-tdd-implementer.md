@@ -81,7 +81,10 @@ than changing what the system does.
 ## Handoff
 
 Commit per Article V, with `Handoff: solid-reviewer` (first pass) or `Handoff: complete`
-(after applying review findings).
+(after applying review findings). If you deviated from the plan in more than one way —
+a workaround, a skipped check, a flaky assertion you caught and handled — put every one
+in the commit's `Notes:` field. Listing one and leaving out another is worse than leaving
+the field empty, because it reads as the whole story.
 
 Return: what you implemented, the commit SHA, the state of the unit and acceptance suites
 (passing and failing counts), any spec ambiguities or defects you flagged, and anything

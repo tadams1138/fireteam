@@ -63,6 +63,18 @@ from the documented one. Each is
 a user interruption that should not have happened. If any appear, name them and propose the
 corrected command form plus the allow rule that would cover it.
 
+**Incomplete notes.** Compare each commit's `Notes:` field against the run log's `stage`
+entry for that same stage and against anything the role's deviations imply from the diff
+itself (a caught exception, a workaround, a skipped check). A `Notes:` field that names one
+deviation while the run log or the diff shows another it omitted is a partial account
+presented as a complete one — flag it by name, quoting what `Notes:` said and what it left
+out.
+
+**Missing stage entries.** Every stage that ran should have its own `runlog.sh stage` line,
+not just a gate decision. A gate entry without a matching stage entry means the audit trail
+is reconstructable but incomplete — note it even when it changes no conclusion, since a
+future run without the commit trail to fall back on would have a real gap.
+
 **Gate value.** For each gate, did the user's decision change the outcome? A gate that is
 always waved through is friction without protection and should be flagged for removal or
 automation. A gate where the user redirected the work earned its place.

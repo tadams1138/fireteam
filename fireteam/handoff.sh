@@ -36,6 +36,19 @@ if git diff --cached --quiet; then
   exit 1
 fi
 
+# CLAUDE.md and .claude/settings.json are the orchestrator's to write (Article VI) —
+# no role owns them. Their presence here almost always means an earlier gate's edits
+# were left uncommitted and this stage's `git add -A` swept them in. Warn, don't
+# block: the commit may still be legitimate (e.g. a role touching its own working
+# tree state), and it's the human reviewing the handoff who should judge that.
+STRAY=$(git diff --cached --name-only -- CLAUDE.md .claude/settings.json .claude/settings.local.json)
+if [ -n "$STRAY" ]; then
+  echo "warning: this commit includes files no role should own:" >&2
+  printf '%s\n' "$STRAY" | sed 's/^/  /' >&2
+  echo "if these came from a gate you approved, they should have been committed" >&2
+  echo "separately before this stage ran — check the attribution before relying on it." >&2
+fi
+
 git commit -q -F - << MSGEOF
 ${ROLE}: ${SUMMARY}
 

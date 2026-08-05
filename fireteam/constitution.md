@@ -119,6 +119,10 @@ argument, say so in your handoff and stop — do not reach for `cd` as the worka
 - Use `~/.claude/fireteam/handoff.sh` to commit. It applies this format and excludes review
   scratch automatically — do not hand-roll the commit.
 - Report the resulting commit SHA in your returned summary. That SHA is the handoff.
+- **`Notes:` must be complete, not representative.** If you are self-reporting more than
+  one deviation — a workaround, a skipped check, a flaky assertion you caught and handled —
+  list every one. A `Notes:` field that names one deviation and omits another reads as a
+  full account when it isn't, and the debrief has no way to know what it wasn't told.
 
 **Exception — review artifacts.** Roles that produce findings rather than changes do not
 commit. Their output goes to `.claude/reviews/`, which is gitignored scratch space, and

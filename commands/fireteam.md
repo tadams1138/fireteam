@@ -72,9 +72,18 @@ another approval, and never add `~/.claude/fireteam/` or `.claude/settings.json`
 `permissions.allow` (Constitution, Article VI). Confirm the documented commands actually
 run before proceeding.
 
+**Commit these two files yourself, immediately** — a plain `git commit`, not
+`handoff.sh` — before delegating to stage 2. `handoff.sh` stages everything dirty in the
+tree; leaving your edits uncommitted lets them get swept into the implementer's stage-2
+commit, which blurs a human-approved change into a role's handoff. This is your commit, not
+a role's — it carries no `Handoff:`/`State:`/`Notes:` trailer.
+
 **GATE — spec approval.** When it returns a specification, show the user the scenarios and
 acceptance criteria and ask for approval before proceeding. Do not continue past a gate
 without an explicit go-ahead.
+
+Record it — `~/.claude/fireteam/runlog.sh stage 1 fireteam-spec-author sonnet <outcome>
+"<notes>"` — once the spec is approved and committed.
 
 Expect the stage-1 commit to contain only the specification and `.feature` files. If it
 contains any code — step definitions, interfaces, stubs, anything that compiles — that is a
@@ -97,6 +106,9 @@ That is the expected handoff, and the implementer's first job is to write them.
 **GATE — implementation review.** Report what was implemented and the suite state. If the
 acceptance tests are not green, stop and report rather than proceeding to design review.
 
+Record it — `~/.claude/fireteam/runlog.sh stage 2 fireteam-tdd-implementer sonnet <outcome>
+"<notes>"` — once the gate above clears.
+
 ## Stage 3 of 5 — Design review
 
 Delegate to `fireteam-solid-reviewer`, passing the handoff commit SHA from stage 2.
@@ -104,6 +116,10 @@ Delegate to `fireteam-solid-reviewer`, passing the handoff commit SHA from stage
 It writes its findings to `.claude/reviews/<sha>.md` — gitignored scratch — and returns
 that path plus a one-line summary per finding. It does not commit; nothing enters the
 repository at this stage.
+
+Record it — `~/.claude/fireteam/runlog.sh stage 3 fireteam-solid-reviewer opus <outcome>
+"<notes>"` — before the gate below. This stage produces no commit, so the run log is the
+only record it happened at all; do not let the gate entry substitute for it.
 
 **GATE — refactor selection.** Present the one-line summaries with their numbers and
 BLOCKING/OPTIONAL labels, and ask the user which to apply. Do not assume all of them, and
@@ -119,6 +135,16 @@ Re-invoke `fireteam-tdd-implementer`, passing:
 
 It reads the findings verbatim in its own context and applies the accepted subset under a
 green suite.
+
+Record it — `~/.claude/fireteam/runlog.sh stage 4 fireteam-tdd-implementer sonnet <outcome>
+"<notes>"` — as soon as it returns.
+
+Before moving on, check the commit's `Notes:` field against everything the implementer's
+returned summary self-reported. If it mentioned more than one deviation — a workaround, a
+skipped check, a flaky assertion caught and handled — every one of them must appear in
+`Notes:`, not just the first. If any are missing, do not amend the implementer's commit
+(Article V); instead capture the rest with `~/.claude/fireteam/runlog.sh note "<text>"` so
+the run log carries the complete account even where the commit message falls short.
 
 ## Stage 5 of 5 — Debrief
 
