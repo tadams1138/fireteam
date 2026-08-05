@@ -162,9 +162,13 @@ cat <<'JSON'
   "permissions": {
     "allow": [
       "Bash(~/.claude/fireteam/preflight.sh:*)",
+      "Bash(bash ~/.claude/fireteam/preflight.sh:*)",
       "Bash(~/.claude/fireteam/handoff.sh:*)",
+      "Bash(bash ~/.claude/fireteam/handoff.sh:*)",
       "Bash(~/.claude/fireteam/reviews.sh:*)",
-      "Bash(~/.claude/fireteam/runlog.sh:*)"
+      "Bash(bash ~/.claude/fireteam/reviews.sh:*)",
+      "Bash(~/.claude/fireteam/runlog.sh:*)",
+      "Bash(bash ~/.claude/fireteam/runlog.sh:*)"
     ],
     "deny": [
       "Bash(cd:*)",
@@ -174,6 +178,10 @@ cat <<'JSON'
   }
 
 JSON
+echo "The bash-prefixed entries cover Windows, where these scripts have no"
+echo "executable bit and must be invoked as \`bash <script>\` — permission rules"
+echo "match a command's leading text, so the plain-path entries alone don't"
+echo "match that form."
 echo "Merge it by hand — this installer never edits a permissions file."
 echo
 echo "Verify in any repo with:  $DEST/fireteam/preflight.sh"

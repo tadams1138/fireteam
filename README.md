@@ -59,9 +59,13 @@ Merge it into `~/.claude/settings.json` by hand:
   "permissions": {
     "allow": [
       "Bash(~/.claude/fireteam/preflight.sh:*)",
+      "Bash(bash ~/.claude/fireteam/preflight.sh:*)",
       "Bash(~/.claude/fireteam/handoff.sh:*)",
+      "Bash(bash ~/.claude/fireteam/handoff.sh:*)",
       "Bash(~/.claude/fireteam/reviews.sh:*)",
-      "Bash(~/.claude/fireteam/runlog.sh:*)"
+      "Bash(bash ~/.claude/fireteam/reviews.sh:*)",
+      "Bash(~/.claude/fireteam/runlog.sh:*)",
+      "Bash(bash ~/.claude/fireteam/runlog.sh:*)"
     ],
     "deny": [
       "Bash(cd:*)",
@@ -74,6 +78,10 @@ Merge it into `~/.claude/settings.json` by hand:
 Without the `allow` entries you will approve every handoff commit and log write by hand,
 dozens of times per run. The `deny` entries are the other half of the bargain: execution is
 granted precisely *because* writing to that directory never is.
+
+The `bash `-prefixed entries matter on Windows, where these scripts have no executable bit
+and get invoked as `bash <script>`. Permission rules match a command's leading text, so a
+rule written for the plain path alone never matches that form.
 
 ### Verify
 
