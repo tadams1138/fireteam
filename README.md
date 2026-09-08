@@ -1,9 +1,9 @@
 # Fire Team
 
-A five-stage development pipeline for [Claude Code](https://claude.ai/code): a feature
-request goes in, and a specification, an implementation, a design review, and an audit of
-the run itself come out — each produced by a separate agent that cannot do the next one's
-job.
+A six-stage development pipeline for [Claude Code](https://claude.ai/code): a feature
+request goes in, and a specification, an implementation, a design review, a reconciled spec,
+and an audit of the run itself come out — each produced by a separate agent that cannot do
+the next one's job.
 
 The point is not that four agents are faster than one. It is that a single agent writing
 both the test and the code it exercises has every incentive to bend one to fit the other.
@@ -100,7 +100,7 @@ verifies the install alone.
 
 Claude Code orchestrates from there, stopping at each gate for your decision.
 
-## The five stages
+## The six stages
 
 | # | Agent | Model | Can modify | Produces |
 |---|---|---|---|---|
@@ -108,7 +108,8 @@ Claude Code orchestrates from there, stopping at each gate for your decision.
 | 2 | `fireteam-tdd-implementer` | sonnet | step definitions, unit tests, source | working code, acceptance suite green |
 | 3 | `fireteam-solid-reviewer` | opus | *nothing — holds no writing tool* | a numbered findings file |
 | 4 | `fireteam-tdd-implementer` | sonnet | step definitions, unit tests, source | the findings you accepted, applied |
-| 5 | `fireteam-retro` | sonnet | *nothing — holds no writing tool* | an audit of how the run itself went |
+| 5 | `fireteam-spec-author` | sonnet | specification + `.feature` files | the spec's status claims made true again |
+| 6 | `fireteam-retro` | sonnet | *nothing — holds no writing tool* | an audit of how the run itself went |
 
 No agent holds the `Agent` tool, so none can spawn further subagents.
 
@@ -117,12 +118,25 @@ names. The acceptance project therefore does not compile when stage 2 receives i
 is the intended handoff: binding Gherkin to a system is implementation work, and it belongs
 to whoever is on the hook for making it pass.
 
+Stage 5 exists because shipping a slice makes a specification lie about itself. Whatever
+records how much of the system is real — "not yet implemented" markers, a coverage table,
+per-section status lines — is now one slice out of date, and only the spec author may
+correct it. It updates those claims and nothing else: a behavioral gap it notices is
+reported, not fixed, because that is the next slice's work and every gate has already
+closed. If nothing is stale it commits nothing, which is a valid way for the stage to end.
+
 ### Gates
 
-The orchestrator stops for you four times: to approve the toolchain and permission rules
-stage 1 proposes, to approve the specification, to review the implementation before design
-review begins, and to pick which findings get applied. Nothing proceeds past a gate without
-an explicit go-ahead.
+The orchestrator stops for you three times: to approve the toolchain and permission rules
+stage 1 proposes, to approve the specification, and to pick which findings get applied.
+Nothing proceeds past a gate without an explicit go-ahead.
+
+There is a fourth checkpoint, after implementation, that deliberately does not stop for
+you. Its question — are the tests green? — has one correct answer, written in the
+implementer's own handoff, so the orchestrator reads it and continues. It escalates to you
+only when something is red or the implementer reports a spec defect. A gate is for a
+judgment only you can make; this one isn't, and gate waits are the largest single cost in
+a run.
 
 ## How the discipline is enforced
 
@@ -140,7 +154,13 @@ Two properties fall out of the design and are worth stating plainly:
 
 - **Handoffs are commits.** Each stage commits its own work, so the next one inherits a
   known, revertible state instead of a dirty tree. The commit message carries `Handoff:`,
-  `State:`, and `Notes:` — which is also what stage 5 audits.
+  `State:`, `Notes:`, and `Unverified:` — which is also what stage 6 audits.
+- **A role can say what it could not establish.** `Notes:` records deviations; `Unverified:`
+  records weaknesses the role found and was not permitted to fix — a scenario that would
+  pass against a do-nothing implementation, say, which the implementer must not repair
+  because feature files belong to the spec author. Without that field the only honest way
+  to raise it would be to tell the next agent what to do, which is itself banned. Reporting
+  a limit of your own work is not steering; directing another role still is.
 - **Review findings are never committed.** They live in gitignored scratch under
   `.claude/reviews/`, because findings are true only until acted upon. What was applied, and
   what was deliberately deferred, belongs in the commit message of the change that enacted it.

@@ -87,6 +87,12 @@ argument, say so in your handoff and stop — do not reach for `cd` as the worka
 - A binding must honestly exercise the behavior its scenario describes. A step definition
   that asserts nothing, swallows an exception, or passes trivially turns a green suite into
   a lie — a worse outcome than the red one it replaced.
+- **The same test applies to the scenario itself.** Ask whether it would pass against a
+  do-nothing implementation — one that returns everything, filters nothing, checks nothing.
+  A scenario asserting that something is excluded, whose Given never arranges the thing to
+  be excluded, passes no matter what the code does. It proves nothing while counting as
+  coverage. Writing one is a specification defect; finding one is a finding, at whatever
+  stage it surfaces and by whichever role notices.
 - Never delete, skip, disable, or `[Ignore]` a failing test to achieve green.
 
 ## Article III — Behavior preservation
@@ -110,19 +116,57 @@ argument, say so in your handoff and stop — do not reach for `cd` as the worka
 - Never amend, rebase, reset, force-push, or rewrite history produced by another stage.
 - Message format:
 
-      <role>(<stage>): <what changed>
+      <role>: <what changed>
 
       Handoff: <next-role>
       State: <tests passing / failing / N/A>
-      Notes: <anything the next stage must know>
+      Notes:
+      - <a deviation from the plan>
+      - <another one>
+      Unverified:
+      - <a weakness in this work you could not resolve>
 
 - Use `~/.claude/fireteam/handoff.sh` to commit. It applies this format and excludes review
-  scratch automatically — do not hand-roll the commit.
+  scratch automatically — do not hand-roll the commit. Notes are variadic: pass each one as
+  its own argument, and each becomes a bullet. Anything after a bare `--` becomes an
+  `Unverified:` entry instead.
 - Report the resulting commit SHA in your returned summary. That SHA is the handoff.
 - **`Notes:` must be complete, not representative.** If you are self-reporting more than
   one deviation — a workaround, a skipped check, a flaky assertion you caught and handled —
   list every one. A `Notes:` field that names one deviation and omits another reads as a
   full account when it isn't, and the debrief has no way to know what it wasn't told.
+- Both fields are always written. An empty one reads `none`, which is a claim you made and
+  the debrief can hold you to. Silence is not the same as "nothing to report."
+
+### `Unverified:` — the limits of your own work
+
+`Notes:` records what you *did* that departed from the plan. `Unverified:` records what you
+*could not establish* about the result: a test you judge weak, an abstraction you are
+unsure of, a case you did not cover, a behavior you could not confirm from where you sat.
+
+This field exists because the rule against steering a later role (Article VIII) would
+otherwise make an honest caveat impossible to write. An implementer who finds that two
+scenarios would pass against a do-nothing implementation, and who cannot strengthen the
+feature file because Article II forbids it, has something the reviewer must know and no
+legal way to say it. Now it has one.
+
+The line between the two is who the sentence is about:
+
+- **Legitimate** — "scenarios 2 and 4 pass against a no-op filter." "The retry path is
+  covered only by the unit suite." "I could not reproduce the reported timing failure."
+  Each states a fact about this work and its limits.
+- **Still forbidden** — "the reviewer should look at `requireAuthIf`." "Treat finding 3 as
+  accepted." "Skip the format check next stage." Each directs another agent, and moving it
+  into this field does not launder it. The debrief reads `Unverified:` for exactly this.
+
+Say what is true about your work and stop there. A later role decides what to do about it —
+that is its judgment to make, and describing the problem is not the same as assigning the
+fix.
+
+Do not use this field to route around a rule that says stop. A specification that is wrong,
+contradictory, or unachievable is a spec defect: stop and report it (Article II). A known
+weakness you are shipping *with* the work, having judged it does not block the handoff, is
+what belongs here.
 
 **Exception — review artifacts.** Roles that produce findings rather than changes do not
 commit. Their output goes to `.claude/reviews/`, which is gitignored scratch space, and
@@ -176,6 +220,13 @@ them a privileged act.
 - Every role writes its handoff knowing the debrief will read it. Notes are for facts the
   next stage needs, never for instructions aimed at another agent. A handoff that tries to
   steer a later role is a violation, and it is visible.
+- **Reporting a limit of your own work is not steering.** The `Unverified:` field exists so
+  that an honest caveat has a legal home (Article V), and its contents are not a violation
+  merely for being aimed downstream — every field in a handoff is read downstream. What
+  makes text smuggling is that it directs another agent's behavior rather than describing
+  your own results. "Scenario 4 passes against a no-op filter" is a fact about the work.
+  "The reviewer should check scenario 4" is an instruction, and it is still a violation
+  wherever it appears — including in `Unverified:`.
 - A clean run is a valid finding. Manufacturing observations to appear useful corrupts the
   only feedback loop the pipeline has.
 

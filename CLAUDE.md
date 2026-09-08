@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repository is
 
-Fire Team is the **source** for a Claude Code extension: a five-stage,
-spec → implement → review → apply → debrief development pipeline made of four subagents, one
-slash command, a constitution, and four shell scripts. It contains no application code and no
-test suite of its own — the deliverable is the prompt/script bundle that gets installed into
-`~/.claude`.
+Fire Team is the **source** for a Claude Code extension: a six-stage,
+spec → implement → review → apply → reconcile → debrief development pipeline made of four
+subagents, one slash command, a constitution, and four shell scripts. Two of the subagents
+run twice — the implementer builds and then applies review findings, the spec author writes
+the specification and then reconciles its status claims with what shipped. It contains no
+application code and no test suite of its own — the deliverable is the prompt/script bundle
+that gets installed into `~/.claude`.
 
 Consequence: editing a file here changes nothing until `install.sh` copies it. A running
 pipeline reads `~/.claude/...`, never this working tree.
@@ -57,7 +59,7 @@ one of them is a bug.
 The orchestrator (`commands/fireteam.md`) delegates and gates; it writes no code. Stage
 handoffs are commits (`handoff.sh`), stage 3's output is gitignored scratch under
 `.claude/reviews/<sha>.md` (`reviews.sh`), and the run log under `.claude/runs/` (`runlog.sh`)
-is the only evidence stage 5 has — so it must be written as each stage happens, not
+is the only evidence stage 6 has — so it must be written as each stage happens, not
 reconstructed.
 
 ## Design constraints these files exist to satisfy
@@ -89,9 +91,15 @@ Understand these before changing anything; most of the odd-looking code is here 
   failure is expected, as in `install.sh` and `preflight.sh`), no bashisms beyond what is
   already present. LF endings only — a CR in a shebang produces
   `bad interpreter: /usr/bin/env^M`, which `install.sh` strips and `preflight.sh` detects.
-- **Paths taken from callers are computed, not trusted.** `reviews.sh write` derives its
-  output path from a `git rev-parse`-verified 40-hex SHA precisely so a caller cannot direct a
-  write elsewhere. Preserve that property.
+- **Paths taken from callers are computed, not trusted.** `reviews.sh write` and
+  `reviews.sh append` derive their output path from a `git rev-parse`-verified 40-hex SHA
+  precisely so a caller cannot direct a write elsewhere — `resolve_sha` is the only place a
+  destination is chosen, and must stay that way. Preserve that property.
+- **The reviewer's findings reach disk in chunks.** It holds no `Write` tool, so its only
+  route is stdin to `reviews.sh`, inside a shell command the tool layer truncates at a few
+  kilobytes — silently. `write` opens the file and `append` extends it, so a long review
+  survives intact. The reviewer reports its finding count and the orchestrator checks it
+  against the file; a mismatch means a chunk was lost, not that the reviewer found less.
 - **Prose is the product.** The agent files and constitution are prompts: the wording, the
   explicit "you own nothing else" boundaries, and the stated rationale behind each rule are
   load-bearing. Do not compress them into terse bullet lists.

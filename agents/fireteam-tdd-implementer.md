@@ -84,7 +84,31 @@ Commit per Article V, with `Handoff: solid-reviewer` (first pass) or `Handoff: c
 (after applying review findings). If you deviated from the plan in more than one way —
 a workaround, a skipped check, a flaky assertion you caught and handled — put every one
 in the commit's `Notes:` field. Listing one and leaving out another is worse than leaving
-the field empty, because it reads as the whole story.
+the field empty, because it reads as the whole story. Each note is its own argument to
+`handoff.sh`, so listing three costs you three arguments, not a run-on sentence.
+
+**Use `Unverified:` for what you could not establish.** You will regularly finish a stage
+knowing something is weak without being allowed to fix it. The clearest case: a scenario
+that would pass even against a do-nothing implementation, because the Given never arranges
+the thing the Then claims is excluded. Article II forbids you from touching the feature
+file, and rightly — but the weakness is real, and the reviewer needs it.
+
+Write it as a fact about the work and pass it after a bare `--`:
+
+    ~/.claude/fireteam/handoff.sh tdd-implementer solid-reviewer "449/449, 66/66" \
+      "my-wars listing" "status badge now renders on Home too" \
+      -- "scenarios 2 and 4 pass against a no-op filter — no second creator is arranged" \
+         "requireAuthIf is a new abstraction, unexercised outside this route"
+
+Do not write "the reviewer should look at this." Stating the fact is your whole job here;
+what to do about it is the next role's call, and phrasing it as a directive is a violation
+(Article VIII) no matter which field it sits in. And do not use the field to keep going
+past something that should stop you — a specification that is wrong or unachievable is a
+spec defect: report it and stop.
+
+Your returned summary and the commit must agree. Anything you tell the orchestrator is
+worth the reviewer's attention belongs in the commit too — the run log is gitignored and
+the reviewer never reads it, so a caveat that lives only there reaches no one.
 
 Return: what you implemented, the commit SHA, the state of the unit and acceptance suites
 (passing and failing counts), any spec ambiguities or defects you flagged, and anything
